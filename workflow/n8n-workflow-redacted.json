@@ -1,0 +1,938 @@
+{
+  "name": "LinkedInPostings",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Topic Batch Stream",
+        "height": 272,
+        "width": 432,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3632,
+        -7776
+      ],
+      "typeVersion": 1,
+      "id": "...",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Jobrolls Batch Stream",
+        "height": 272,
+        "width": 368,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3184,
+        -7776
+      ],
+      "typeVersion": 1,
+      "id": "...",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ===== Inputs =====\n\n// LLM delivers the text\nconst postText = $json.output;\n\n// SharePoint-Match-Fields\nconst fields = $json.fields;\n\n// ===== Validation =====\nif (!postText) {\n  throw new Error(\"LLM output missing\");\n}\n\nif (!fields) {\n  throw new Error(\"SharePoint-Felder missing\");\n}\n\nif (!fields.request_item_id) {\n  throw new Error(\"request_item_id missing\");\n}\n\nif (!fields.jobrole_id) {\n  throw new Error(\"jobrole_id missing\");\n}\n\nif (!fields.id) {\n  throw new Error(\"match_item_id missing\");\n}\n\n// ===== Payload =====\nreturn {\n  json: {\n    title: fields.Title,\n    request_item_id: String(fields.request_item_id),\n    jobrole_id: String(fields.jobrole_id),\n    topic: fields.Title,\n    generated_post: postText,\n    content_status: \"Review\",\n    language: fields.language,\n\n    // Reference to Role_Matches\n    match_item_id: String(fields.id)\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        -7712
+      ],
+      "id": "...",
+      "name": "Prepare Content Payload"
+    },
+    {
+      "parameters": {
+        "url": "https://graph.microsoft.com/v1.0/sites/...",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "$filter",
+              "value": "fields/Status eq 'New'"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -3568,
+        -7712
+      ],
+      "id": "...",
+      "name": "Get New Topics (Batch)",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "...",
+          "name": "API Azure for N8N"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.value || [];   \nif (!raw.length) return [];\n\nconst topics = raw\n  .map(x => x.fields || {})\n  .filter(f => (f.Status || \"\").toLowerCase() === \"new\")   // filter all new enties\n  .map(f => ({\n    topic: f.Title || null,\n    request_item_id: f.id || null,\n    context_type: f.Kontext_Typ || null,\n    context_note: f.Kontext_Notiz || null,\n    context_link: f.Kontext_Link || null,\n    language: f.Sprache || null,\n    match_mode: f.Match_Mode || null,\n  }));\n\nreturn topics.map(t => ({ json: t }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3360,
+        -7712
+      ],
+      "id": "...",
+      "name": "Select Topics for Batch"
+    },
+    {
+      "parameters": {
+        "url": "https://graph.microsoft.com/v1.0/sites/...",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "$expand",
+              "value": "fields"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -3120,
+        -7712
+      ],
+      "id": "...",
+      "name": "Get LinkedIn_Jobrollen",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "",
+          "name": "API Azure for N8N"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $json.value || [];\n\nconst result = items\n  .filter(i => i.fields?.Aktiv === true)\n  .map(i => ({\n    json: {\n      jobrole_id: i.fields.JobRole_ID,\n      jobrole_title: i.fields.Title,\n      interest_topics: i.fields.interest_topics,\n      interest_keywords: i.fields.interest_keywords,\n      context_focus: i.fields.context_focus,\n      Exclusion_Topics: i.fields.Exclusion_Topics,\n      primary_goal: i.fields.primary_goal,\n      perspective: i.fields.perspective,\n      tonality: i.fields.tonality,\n      Pain_Points: i.fields.Pain_Points,\n      Gains: i.fields.Gains,\n      Value_Hook: i.fields.Value_Hooks,\n      Do_Not: i.fields.Do_Not,\n      Call_to_Action_Stil: i.fields.Call_to_Action_Stil,\n      role_focus: i.fields.role_focus,\n    }\n  }));\n\nreturn result;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2944,
+        -7712
+      ],
+      "id": "...",
+      "name": "Get Active Jobroles"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ===============================\n// Match Topic to Relevant Jobroles\n// Mode: Run once for each item\n// ===============================\n\n// -------- Get Topic (from Topic Stream) --------\nconst topicItem =\n  $items(\"Select Topics for Batch\")[0]?.json ||\n  $items(\"Pick Topic (New)\")[0]?.json;\n\nif (!topicItem) {\n  return {\n    json: {\n      ...$json,\n      relevance_match: false,\n      match_debug: { reason: \"no_topic_item\" },\n    },\n  };\n}\n\n// -------- Helpers --------\nconst toStr = (v) => (v === null || v === undefined ? \"\" : String(v));\n\nconst splitList = (v) =>\n  toStr(v)\n    .toLowerCase()\n    .split(/[,;\\n]+/g)\n    .map((s) => s.trim())\n    .filter(Boolean);\n\nconst textTokens = (v) =>\n  toStr(v)\n    .toLowerCase()\n    .replace(/[^a-z0-9äöüß\\s-]/gi, \" \")\n    .split(/\\s+/g)\n    .map((s) => s.trim())\n    .filter((s) => s.length >= 3); // wichtig: ESG bleibt erhalten\n\nconst listToTokens = (list) =>\n  list.flatMap((entry) => textTokens(entry));\n\nconst intersects = (a, b) => {\n  const setB = new Set(b);\n  return a.some((x) => setB.has(x));\n};\n\n// -------- Topic Tokens --------\nconst topicTitleTokens = textTokens(topicItem.topic || topicItem.Title || \"\");\nconst topicNoteTokens  = textTokens(topicItem.context_note || topicItem.Kontext_Notiz || \"\");\nconst topicTokens = [...new Set([...topicTitleTokens, ...topicNoteTokens])];\n\nconst topicFocus = Array.isArray(topicItem.context_focus)\n  ? topicItem.context_focus.map((x) => String(x).toLowerCase())\n  : splitList(topicItem.context_focus);\n\n// -------- Jobrole Data (current item) --------\nconst interestKeywords = splitList($json.interest_keywords);\nconst interestTopics   = splitList($json.interest_topics);\nconst ausschlussThemen = splitList($json.Ausschluss_Themen);\n\nconst jobFocus = Array.isArray($json.context_focus)\n  ? $json.context_focus.map((x) => String(x).toLowerCase())\n  : splitList($json.context_focus);\n\n// -------- Matching --------\n// -------- Tokenize Jobrole Lists --------\nconst interestKeywordTokens = listToTokens(interestKeywords);\nconst interestTopicTokens   = listToTokens(interestTopics);\nconst ausschlussTokens      = listToTokens(ausschlussThemen);\n\n// -------- Matching Logic --------\n\n// 1) Positive Matches\nconst keywordMatch =\n  intersects(topicTokens, interestKeywordTokens) ||\n  intersects(topicTokens, interestTopicTokens);\n\n// 2) Focus Match\nconst focusMatch =\n  topicFocus.length > 0 &&\n  jobFocus.length > 0 &&\n  intersects(topicFocus, jobFocus);\n\n// 3) Exclusion Match (HARD STOP)\nconst exclusionMatch =\n  ausschlussThemen.length > 0 &&\n  intersects(topicTokens, ausschlussThemen);\n\n// 4) Final Relevance\nconst isRelevant = (keywordMatch || focusMatch) && !exclusionMatch;\n\n// -------- Output --------\nreturn {\n  json: {\n    ...$json,\n\n    // Topic reference\n    request_item_id: topicItem.request_item_id || topicItem.id,\n    topic: topicItem.topic || topicItem.Title,\n    context_type: topicItem.context_type || topicItem.Kontext_Typ,\n    context_link: topicItem.context_link || topicItem.Kontext_Link,\n    context_note: topicItem.context_note || topicItem.Kontext_Notiz,\n    language: topicItem.language || topicItem.Sprache,\n    match_mode: topicItem.match_mode || topicItem.Match_Mode,\n    \n    // Result\n    relevance_match: isRelevant,\n\n    // Debug \n    match_debug: {\n      keywordMatch,\n      focusMatch,\n      exclusionMatch,\n      topicFocusCount: topicFocus.length,\n      topicTokenSample: topicTokens.slice(0, 10),\n    },\n  },\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2752,
+        -7712
+      ],
+      "id": "...",
+      "name": "Match Topic to Relevant Jobroles"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "...",
+              "leftValue": "={{$json.relevance_match}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2560,
+        -7712
+      ],
+      "id": "e7c34cc9-bcb5-4884-8438-8b4f05c66c24",
+      "name": "relevance_match"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  title: `${$json.topic} – ${$json.jobrole_title}`,\n  request_item_id: $json.request_item_id,\n  jobrole_id: $json.jobrole_id,\n  jobrole_title: $json.jobrole_title,\n  interest_topics: $json.interest_topics,\n  interest_keywords: $json.interest_keywords,\n  context_focus: $json.context_focus,\n  context_link: $json.context_link,\n  Exclusion_Topics: $json.Exclusion_Topics,\n  primary_goal: $json.primary_goal,\n  perspective: $json.perspective,\n  tonality: $json.tonality,\n  Pain_Points: $json.Pain_Points,\n  Gains: $json.Gains,\n  Value_Hook: $json.Value_Hook,\n  Do_Not: $json.Do_Not,\n  Call_to_Action_Stil: $json.Call_to_Action_Stil,\n  role_focus: $json.role_focus,\n  topic: $json.topic,\n  context_note: $json.context_note,\n  language: $json.language,\n  relevance_match: $json.relevance_match,\n  match_reason: `keywordMatch=${$json.match_debug?.keywordMatch ?? false}, \n  focusMatch=${$json.match_debug?.focusMatch ?? false}`,\n  created_at: new Date().toISOString()\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2320,
+        -7728
+      ],
+      "id": "...",
+      "name": "Prepare Match Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.microsoft.com/v1.0/sites/...",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"fields\": {\n    \"Title\": \"{{$json.fields.Title}}\",\n    \"request_item_id\": \"{{$json.fields.request_item_id}}\",\n    \"jobrole_id\": \"{{$json.fields.jobrole_id}}\",\n    \"jobrole_title\": \"{{$json.fields.jobrole_title}}\",\n    \"interest_topics\": \"{{$json.fields.interest_topics}}\",\n    \"interest_keywords\": \"{{$json.fields.interest_keywords}}\",\n    \"context_focus\": \"{{$json.fields.context_focus}}\",\n    \"Exclusion_Topics\": \"{{$json.fields.Exclusion_Topics}}\",\n    \"primary_goal\": \"{{ $json.fields.primary_goal }}\",\n    \"perspective\": \"{{$json.fields.perspective}}\",\n    \"tonality\": \"{{$json.fields.tonality}}\",\n    \"Pain_Points\": \"{{$json.fields.Pain_Points}}\",\n    \"Gains\": \"{{$json.fields.Gains}}\",\n    \"Value_Hook\": \"{{$json.fields.Value_Hook}}\",\n    \"Do_Not\": \"{{$json.fields.Do_Not}}\",\n    \"Call_to_Action_Stil\": \"{{$json.fields.Call_to_Action_Stil}}\",\n    \"role_focus\": \"{{$json.fields.role_focus}}\",\n    \"topic\": \"{{$json.fields.topic}}\",\n    \"context_note\": \"{{$json.fields.context_note}}\",\n    \"context_link\": \"{{$json.fields.context_link}}\",\n    \"language\": \"{{$json.fields.language}}\"\n  }\n}\n\n",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1920,
+        -7728
+      ],
+      "id": "...",
+      "name": "Create Role_Matches",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "...",
+          "name": "API Azure for N8N"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -736,
+        -7712
+      ],
+      "id": "...",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.microsoft.com/v1.0/sites/.../items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "=json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={\n  \"fields\": {\n    \"Title\": \"{{$json.title}}\",\n    \"request_item_id\": \"{{$json.request_item_id}}\",\n    \"jobrole_id\": \"{{$json.jobrole_id}}\",\n    \"topic\": \"{{$json.topic}}\",\n    \"content_status\": \"{{$json.content_status}}\",\n    \"language\": \"{{$json.language}}\",\n    \"generated_post\": {{ JSON.stringify($json.generated_post) }}\n  }\n}\n",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -352,
+        -7712
+      ],
+      "id": "...",
+      "name": "Create Generated_Content",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "...",
+          "name": "API Azure for N8N"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a role-specific LinkedIn carousel post based on the provided topic and role profile./nUse the following input dimensions:/n- topic/n- optional context link/n- optional context note/n- language/n- job role title/n- role focus/n- perspective/n- tonality/n- pain points/n- gains/n- value hook/n- primary goal/n- context focus/n- relevant interest topics and keywords/n- exclusion topics/n- call-to-action style/nGeneration requirements:/n- produce a LinkedIn carousel draft/n- adapt framing and wording to the selected role/n- incorporate relevant context if available/n- respect exclusion criteria and content guardrails/n- keep the post practical, role-specific, and audience-relevant/n- avoid unsupported claims/n- no emojis/n- no aggressive sales language/nOutput format:/n- carousel format only/n- 6–9 slides/n- each slide with a short headline and concise supporting lines",
+        "options": {
+          "systemMessage": "You are a professional B2B LinkedIn content assistant./nYour task is to generate a role-specific LinkedIn carousel draft based on structured business and audience inputs./nRules:/n- use only the provided context/n- do not invent facts/n- do not generalize beyond the input/n- adapt tone, framing, and perspective to the selected role/n- keep the text factual, practical, and audience-aware/n- no emojis/n- no aggressive calls to action/n- respect exclusion rules and guardrails/n- output carousel format only"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -1024,
+        -7600
+      ],
+      "id": "...",
+      "name": "LLM_Generate_LinkedIn_Post"
+    },
+    {
+      "parameters": {
+        "content": "## Automated LinkedIn-Postings for different Jobroles and different topics (endless scaleable)\n",
+        "height": 784,
+        "width": 4688
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3920,
+        -7968
+      ],
+      "typeVersion": 1,
+      "id": "...",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "url": "https://graph.microsoft.com/v1.0/sites/...",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "$expand",
+              "value": "fields"
+            },
+            {
+              "name": "$filter",
+              "value": "=fields/request_item_id eq '{{ $json.fields.request_item_id }}' and fields/jobrole_id eq '{{$json.fields.jobrole_id}}'"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -128,
+        -7712
+      ],
+      "id": "...",
+      "name": "Get Role_Matches Update to Draft",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "...",
+          "name": "API Azure for N8N"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if ($json.fields?.content_status !== \"New\") {\n  return null; // skip everything that is not \"New\"\n}\n\nreturn {\n  json: {\n    id: $json.id,\n    fields: {\n      content_status: \"Draft\"\n    }\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        -7712
+      ],
+      "id": "...",
+      "name": "Prepare Update Role_Matches Payload"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://graph.microsoft.com/v1.0/sites/.../items/{{ $json.id }}/fields",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content_status\": \"{{ $json.fields.content_status }}\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        416,
+        -7712
+      ],
+      "id": "...",
+      "name": "Create Role_Matches Update Content_Status",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "...",
+          "name": "API Azure for N8N"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "value",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -7712
+      ],
+      "id": "...",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    fields: {\n      Title: String($json.title ?? ''),\n      request_item_id: String($json.request_item_id ?? ''),\n      jobrole_id: String($json.jobrole_id ?? ''),\n      jobrole_title: String($json.jobrole_title ?? ''),\n      interest_topics: String($json.interest_topics ?? '')\n                     .replace(/\"/g, \"'\") // Äußere Anführungszeichen durch einfache ersetzen\n                     .replace(/[\\r\\n]+/g, ' '), // Zeilenumbrüche durch Leerzeichen ersetzen\n      interest_keywords: String($json.interest_keywords ?? ''),\n\n      context_focus: Array.isArray($json.context_focus)\n        ? $json.context_focus.join(', ')\n        : String($json.context_focus ?? ''),\n\n      Exclusion_Topics: String($json.Exclusion_Topics ?? ''),\n      primary_goal: String($json.primary_goal ?? ''),\n\n      perspective: Array.isArray($json.perspective)\n        ? $json.perspective.join(', ')\n        : String($json.perspective ?? ''),\n\n      tonality: Array.isArray($json.tonality)\n        ? $json.tonality.join(', ')\n        : String($json.tonality ?? ''),\n\n      Pain_Points: String($json.Pain_Points ?? ''),\n      Gains: String($json.Gains ?? ''),\n      Value_Hook: String($json.Value_Hook ?? ''),\n      Do_Not: String($json.Do_Not ?? ''),\n      Call_to_Action_Stil: String($json.Call_to_Action_Stil ?? ''),\n      role_focus: String($json.role_focus ?? ''),\n      topic: String($json.topic ?? ''),\n      context_note: String($json.context_note ?? ''),\n      context_link: $json.context_link?.Url\n        ? String($json.context_link.Url).trim()\n        : '',\n      language: String($json.language ?? ''),\n\n      relevance_match: Boolean($json.relevance_match ?? false),\n      match_reason: String($json.match_reason ?? ''),\n      created_at: String($json.created_at ?? '')\n    }\n  }\n};\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2112,
+        -7728
+      ],
+      "id": "...",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://graph.microsoft.com/v1.0/sites/.../items/{{ $json.request_item_id }}/fields",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"Status\": \"Draft\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1520,
+        -7728
+      ],
+      "id": "...",
+      "name": "Update Topic_Requests Status → Draft",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "...",
+          "name": "API Azure for N8N"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    request_item_id: $json.fields.request_item_id\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1712,
+        -7728
+      ],
+      "id": "...",
+      "name": "Prepare RequestId For Dedup"
+    },
+    {
+      "parameters": {
+        "url": "https://graph.microsoft.com/v1.0/sites/.../items?$expand=fields",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "$filter",
+              "value": "fields/content_status eq 'New'"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1344,
+        -7728
+      ],
+      "id": "...",
+      "name": "Get Role_Matches for LLM",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "...",
+          "name": "API Azure for N8N"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "value",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        -7728
+      ],
+      "id": "...",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        576,
+        -7440
+      ],
+      "id": "...",
+      "name": "Wait",
+      "webhookId": "..."
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -3856,
+        -7712
+      ],
+      "id": "...",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool exactly once to research additional market insights if the context_link is insufficient. Accept the first result as final.",
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json, text/event-stream"
+            },
+            {
+              "name": "Authorization",
+              "value": "..."
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -800,
+        -7424
+      ],
+      "id": "...",
+      "name": "SearchTool"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-5-20250929",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 1500,
+          "temperature": 0.6
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        -1024,
+        -7440
+      ],
+      "id": "...",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "...",
+          "name": "Anthropic"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Prepare Content Payload": {
+      "main": [
+        [
+          {
+            "node": "Create Generated_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get New Topics (Batch)": {
+      "main": [
+        [
+          {
+            "node": "Select Topics for Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Topics for Batch": {
+      "main": [
+        [
+          {
+            "node": "Get LinkedIn_Jobrollen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LinkedIn_Jobrollen": {
+      "main": [
+        [
+          {
+            "node": "Get Active Jobroles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Jobroles": {
+      "main": [
+        [
+          {
+            "node": "Match Topic to Relevant Jobroles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match Topic to Relevant Jobroles": {
+      "main": [
+        [
+          {
+            "node": "relevance_match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "relevance_match": {
+      "main": [
+        [
+          {
+            "node": "Prepare Match Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Match Payload": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Role_Matches": {
+      "main": [
+        [
+          {
+            "node": "Prepare RequestId For Dedup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Prepare Content Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM_Generate_LinkedIn_Post": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create Generated_Content": {
+      "main": [
+        [
+          {
+            "node": "Get Role_Matches Update to Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Role_Matches Update to Draft": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Update Role_Matches Payload": {
+      "main": [
+        [
+          {
+            "node": "Create Role_Matches Update Content_Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Prepare Update Role_Matches Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create Role_Matches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare RequestId For Dedup": {
+      "main": [
+        [
+          {
+            "node": "Update Topic_Requests Status → Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Topic_Requests Status → Draft": {
+      "main": [
+        [
+          {
+            "node": "Get Role_Matches for LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Role_Matches for LLM": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "LLM_Generate_LinkedIn_Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Role_Matches Update Content_Status": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get New Topics (Batch)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get New Topics (Batch)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SearchTool": {
+      "ai_tool": [
+        [
+          {
+            "node": "LLM_Generate_LinkedIn_Post",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM_Generate_LinkedIn_Post",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "...",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "..."
+  },
+  "id": "...",
+  "tags": []
+}
