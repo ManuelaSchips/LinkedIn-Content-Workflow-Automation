@@ -1,6 +1,6 @@
 # User Guide
 
-This guide explains how to use the LinkedIn Ad-hoc Posting Workflow for creating and reviewing AI-generated LinkedIn carousel drafts.
+This guide explains how to use the LinkedIn Posting Workflow for creating and reviewing AI-generated LinkedIn carousel drafts.
 
 The workflow was designed to make LinkedIn content creation faster, more consistent, and easier to manage.
 
@@ -21,7 +21,7 @@ It supports:
 
 ## Step 1: Create a New Topic Request
 
-Open the **LinkedIn Ad-hoc Requests** SharePoint list.
+Open the **Topic Requests** SharePoint list.
 
 Add a new item and fill in the relevant fields:
 
@@ -62,7 +62,7 @@ Once the request status changes to **Draft**, the topic has already been process
 
 ## Step 3: Review Generated Content
 
-When content is ready for review, open the **LinkedIn Ad-hoc Content** SharePoint list.
+When content is ready for review, open the **Generated Content** SharePoint list.
 
 Filter the **Content Status** column by **Review**.
 
