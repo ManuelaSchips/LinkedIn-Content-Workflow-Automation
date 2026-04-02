@@ -80,17 +80,27 @@ The system works as follows:
 ### Data Layer
 The workflow uses multiple SharePoint lists:
 
-- **LinkedIn_AdHoc_Requests**  
+- **Topic_Requests**  
   Stores topic requests, optional context links, notes, language, and request status
 
-- **LinkedIn_Jobrollen**  
+- **Jobrollen**  
   Stores structured role profiles including goals, pain points, gains, tone, perspective, exclusions, and thematic focus
 
-- **LinkedIn_AdHoc_Matches**  
+- **Role_Matches**  
   Stores topic-role matches and the role-specific context used for generation
 
-- **LinkedIn_AdHoc_Content**  
+- **Generated_Content**  
   Stores generated LinkedIn drafts and their review/publishing status
+
+---
+
+## Workflow Documentation
+
+A redacted version of the n8n workflow is included in this repository to document the orchestration logic, matching process, and content generation flow.
+
+> Note: The production prompt used in the original workflow has been shortened in this public version to protect internal prompt design while preserving the overall workflow logic.
+
+---
 
 ### Workflow Layer
 The orchestration was implemented in **n8n** and includes:
@@ -209,3 +219,27 @@ This case study is based on:
 - operating flowchart
 - onboarding video for internal users
 - SharePoint list structures and generated content examples
+
+---
+
+## Repository Content
+
+linkedin-content-workflow-automation/
+├── README.md
+├── docs/
+│   ├── user-guide.md
+│   └── project-timeline.md
+├── images/
+│   ├── workflow-overview.png
+│   ├── process-flowchart.png
+│   ├── sharepoint-requests.png
+│   ├── sharepoint-jobroles.png
+│   ├── sharepoint-matches-1.png
+│   ├── sharepoint-matches-2.png
+│   ├── sharepoint-matches-3.png
+│   ├── sharepoint-matches-4.png
+│   └── sharepoint-content.png
+└── workflow/
+    └── n8n-workflow-redacted.json
+
+Note: The production prompt used in the original workflow has been shortened in this public version to protect internal prompt design while preserving the overall workflow logic.
