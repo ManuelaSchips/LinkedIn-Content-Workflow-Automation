@@ -241,5 +241,6 @@ linkedin-content-workflow-automation/
 │   └── sharepoint-content.png
 └── workflow/
     └── n8n-workflow-redacted.json
+    
 
 Note: The production prompt used in the original workflow has been shortened in this public version to protect internal prompt design while preserving the overall workflow logic.
