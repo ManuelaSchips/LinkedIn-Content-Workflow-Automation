@@ -78,12 +78,13 @@ The system works as follows:
 ## Architecture
 
 ### Data Layer
+
 The workflow uses multiple SharePoint lists:
 
 - **Topic_Requests**  
   Stores topic requests, optional context links, notes, language, and request status
 
-- **Jobrollen**  
+- **Jobroles**  
   Stores structured role profiles including goals, pain points, gains, tone, perspective, exclusions, and thematic focus
 
 - **Role_Matches**  
@@ -92,17 +93,8 @@ The workflow uses multiple SharePoint lists:
 - **Generated_Content**  
   Stores generated LinkedIn drafts and their review/publishing status
 
----
-
-## Workflow Documentation
-
-A redacted version of the n8n workflow is included in this repository to document the orchestration logic, matching process, and content generation flow.
-
-> Note: The production prompt used in the original workflow has been shortened in this public version to protect internal prompt design while preserving the overall workflow logic.
-
----
-
 ### Workflow Layer
+
 The orchestration was implemented in **n8n** and includes:
 
 - scheduled execution
@@ -114,6 +106,7 @@ The orchestration was implemented in **n8n** and includes:
 - status updates across multiple lists
 
 ### Generation Layer
+
 The LLM prompt setup was designed to generate carousel posts with:
 
 - role-specific perspective
@@ -125,6 +118,7 @@ The LLM prompt setup was designed to generate carousel posts with:
 - strict carousel formatting
 
 ### Human-in-the-Loop Layer
+
 The system does not auto-publish. It supports controlled review by internal users:
 
 - content enters **Review**
@@ -134,21 +128,70 @@ The system does not auto-publish. It supports controlled review by internal user
 
 ---
 
+## Workflow Documentation
+
+A redacted version of the n8n workflow is included in this repository to document the orchestration logic, role-based matching process, and content generation flow.
+
+The repository also includes selected technical screenshots showing custom JavaScript nodes used for topic preprocessing, role matching, and payload preparation.
+
+> Note: The production prompt used in the original workflow has been shortened in this public version to protect internal prompt design while preserving the overall workflow logic.
+
+---
+
+## Technical Implementation Examples
+
+The workflow was not built as a purely low-code setup. In addition to the visual orchestration in n8n, custom JavaScript was used inside code nodes to handle preprocessing, matching, validation, and payload preparation.
+
+Examples documented in this repository include:
+
+- topic extraction and normalization from SharePoint request data
+- role-based topic matching using keyword, focus, and exclusion logic
+- structured payload preparation for content draft creation in SharePoint
+
+---
+
+## Technical Detail Screenshots
+
+### Topic preprocessing
+
+Custom JavaScript used inside n8n to extract and normalize new topic requests from SharePoint list data for downstream matching and generation.
+
+![Topic preprocessing code node](images/technical-details/code-node-topic-selection.png)
+
+### Role matching logic
+
+Custom JavaScript used inside n8n to match structured topic requests against role-specific profiles based on keywords, focus fields, and exclusion logic.
+
+![Role matching code node](images/technical-details/code-node-role-matching.png)
+
+### Content payload preparation
+
+Custom JavaScript used inside n8n to validate LLM output and prepare structured content payloads for SharePoint draft creation.
+
+![Content payload code node](images/technical-details/code-node-content-payload.png)
+
+---
+
 ## Key Design Decisions
 
 ### 1. Structured role modelling instead of generic prompting
+
 The workflow does not generate one generic post per topic. It creates role-specific drafts based on structured role attributes.
 
 ### 2. Matching before generation
+
 A topic is first matched to relevant roles, which reduces noise and keeps generation targeted.
 
 ### 3. SharePoint as operational interface
+
 SharePoint was used as the operational backend so that non-technical users could submit topics, review drafts, and manage statuses.
 
 ### 4. Review before publishing
+
 I intentionally built a human-in-the-loop process to keep editorial control and maintain quality.
 
 ### 5. Scalable content logic
+
 The workflow is designed so that one topic can be turned into multiple role-specific drafts without rebuilding the logic each time.
 
 ---
@@ -217,31 +260,29 @@ This case study is based on:
 
 - workflow export
 - operating flowchart
-- onboarding video for internal users
+- user guide for internal users
 - SharePoint list structures and generated content examples
+- technical implementation screenshots
 
 ---
-```text
+
 ## Repository Content
 
-linkedin-content-workflow-automation/
-├── README.md
-├── docs/
-│   ├── user-guide.md
-│   └── project-timeline.md
-├── images/
-│   ├── workflow-overview.png
-│   ├── process-flowchart.png
-│   ├── sharepoint-requests.png
-│   ├── sharepoint-jobroles.png
-│   ├── sharepoint-matches-1.png
-│   ├── sharepoint-matches-2.png
-│   ├── sharepoint-matches-3.png
-│   ├── sharepoint-matches-4.png
-│   └── sharepoint-content.png
-└── workflow/
-    └── n8n-workflow-redacted.json
-```
-    
-
-Note: The production prompt used in the original workflow has been shortened in this public version to protect internal prompt design while preserving the overall workflow logic.
+    linkedin-content-workflow-automation/
+    ├── README.md
+    ├── docs/
+    │   ├── user-guide.md
+    │   └── project-timeline.md
+    ├── images/
+    │   ├── workflow-overview.png
+    │   ├── process-flowchart.png
+    │   ├── sharepoint-requests.png
+    │   ├── sharepoint-jobroles.png
+    │   ├── sharepoint-matches.png
+    │   ├── sharepoint-content.png
+    │   └── technical-details/
+    │       ├── code-node-topic-selection.png
+    │       ├── code-node-role-matching.png
+    │       └── code-node-content-payload.png
+    └── workflow/
+        └── n8n-workflow-redacted.json
