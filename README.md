@@ -130,11 +130,9 @@ The system does not auto-publish. It supports controlled review by internal user
 
 ## Workflow Documentation
 
-A redacted version of the n8n workflow is included in this repository to document the orchestration logic, role-based matching process, and content generation flow.
+This repository documents the workflow architecture, role-based matching process, and content generation logic through a case study, process diagrams, and selected technical screenshots.
 
-The repository also includes selected technical screenshots showing custom JavaScript nodes used for topic preprocessing, role matching, and payload preparation.
-
-> Note: The production prompt used in the original workflow has been shortened in this public version to protect internal prompt design while preserving the overall workflow logic.
+> Note: The full production workflow export is not published in this public version in order to avoid exposing internal implementation details and prompt design.
 
 ---
 
