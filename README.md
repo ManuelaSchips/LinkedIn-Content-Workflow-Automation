@@ -272,15 +272,14 @@ This case study is based on:
     │   ├── user-guide.md
     │   └── project-timeline.md
     ├── images/
-    │   ├── workflow-overview.png
-    │   ├── process-flowchart.png
-    │   ├── sharepoint-requests.png
-    │   ├── sharepoint-jobroles.png
-    │   ├── sharepoint-matches.png
-    │   ├── sharepoint-content.png
-    │   └── technical-details/
-    │       ├── code-node-topic-selection.png
-    │       ├── code-node-role-matching.png
-    │       └── code-node-content-payload.png
-    └── workflow/
-        └── n8n-workflow-redacted.json
+        ├── workflow-overview.png
+        ├── process-flowchart.png
+        ├── sharepoint-requests.png
+        ├── sharepoint-jobroles.png
+        ├── sharepoint-matches.png
+        ├── sharepoint-content.png
+        └── technical-details/
+            ├── code-node-topic-selection.png
+            ├── code-node-role-matching.png
+            └── code-node-content-payload.png
+   
